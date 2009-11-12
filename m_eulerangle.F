@@ -1,12 +1,34 @@
+#if 0
+
+ engler angle theta and phi  determie the new c-axis
+      the new c-axis=(/ cos(theta)*cos(phi), cos(theta)*sin(phi), sin(theta) /)
+
+      rot is the matrix to find this, i.e. rot (0 0 1)^T =  the new c-axis
+
+      rot1(theta,phi) (1,0,0)^T -> the rotated original a-axis 
+
+      rotate this rotated original a-axis again to the a_proj axis. This ange is psi
+
+      now you have rot2(theta,phi,psi) 
+ 
+      rot2 ( 0 0 1)^T = (/ cos(theta)*cos(phi), cos(theta)*sin(phi), sin(theta) /)
+      rot2 ( 1 0 0)^T = the a_proj axis 
+
+      note: 
+         a_proj is given by a_tmp and a_proj is calculated by
+         a_proj= a_tmp - (a_tmp, 'the rotated original a-axis') 'the rotated original a-axis'
+
+#endif
 #ifdef DEBUG_WRITE
 #undef DEBUG_WRITE
 #endif
       module m_eulerangle
 
+      private:: abs3 
+
       contains
 
-      
-
+c return |v|
       real(8) function abs3(v)
       real(8),intent(in):: v(3)
       real(8):: r
@@ -18,13 +40,19 @@
       abs3= sqrt(r)
       end function abs3
 
-      subroutine eulerangle2axis(theta,phi,axis)
+c return axis defined by euler angle theta and phi 
+      subroutine eulerangle2axis(theta,phi,
+     o  axis)
 c (rcos(θ)cos(φ),rcos(θ)sin(φ),rsin(θ))
       real(8):: theta,phi,axis(3)
       axis=(/ cos(theta)*cos(phi), cos(theta)*sin(phi), sin(theta) /)
       end subroutine eulerangle2axis
 
-      subroutine axis2eulerangle (axis0,theta,phi)
+c
+c find euler angle theta and phi from axis0 
+c
+      subroutine axis2eulerangle (axis0,
+     o   theta,phi)
       implicit none
       real(8),intent(in):: axis0(3)
       real(8):: axis2(3),axis(3)
@@ -86,7 +114,8 @@ c      write(*,*) axis2
 
 
 
-      subroutine sincos2ang(vs, vc, angle)
+      subroutine sincos2ang(vs, vc, 
+     o  angle)
       implicit none
       real(8),intent(in):: vs, vc
       real(8),intent(out):: angle 
@@ -111,8 +140,16 @@ c      write(*,*) axis2
       end subroutine sincos2ang
 
 
-
-      subroutine axisac2rot(axisa,axisc,rot, psi0)
+c
+c only axisc can determine rotated c-axis
+c axisa determine new a-axis in the rotated frame
+c
+c find rotation matrix defind by axisa and axisc
+c optional : psi0,  omit rotation defined by axisa
+c
+      subroutine axisac2rot(axisa,axisc,
+     o  rot,
+     i   psi0)
       implicit none
       real(8):: axisa(3),axisc(3)
       real(8):: rot(3,3)
@@ -128,6 +165,7 @@ c      write(*,*) axis2
       write(*,130) 'new c-axis=', axisc / sqrt(ddot(3,axisc,1,axisc,1))
 #endif
 
+c output theta,phi
       call axis2eulerangle(axisc,theta,phi)
 #ifdef DEBUG_WRITE
       write(*,130) 'theta,phi(deg)=',theta*180/pi,phi*180/pi
@@ -138,6 +176,7 @@ c      write(*,*) axis2
       write(*,130) 'input temporary a-axis=',axisa
 #endif
 
+c output anewtmp,psi 
       call new_a_axis (axisc,theta,phi, anewtmp,psi )
 #ifdef DEBUG_WRITE
       write(*,130) 'projected a-axis=',anewtmp
@@ -150,6 +189,7 @@ c      write(*,*) axis2
         write(*,'(a,f10.2)') 'eulerangle::axisac2rot, comment: optinal psi found: force psi(deg)=',psi/pi*180.0 
       endif 
 
+c output rot 
       call eulerangle2rot(theta,phi,psi,rot)
 
 c check crot is the same
@@ -168,8 +208,9 @@ c end check
       end subroutine axisac2rot
 
 
-
-      subroutine eulerangle2rot(theta,phi,psi,rot)
+c find rot by theta,phi,psi 
+      subroutine eulerangle2rot(theta,phi,psi,
+     o  rot)
       implicit none
       real(8),intent(in):: theta,phi,psi
       real(8),intent(out):: rot(3,3)
@@ -257,9 +298,15 @@ c       enddo
       end  subroutine eulerangle2rot
 
 
-       subroutine new_a_axis(axisc0,theta,phi, anewtmp0,psi)
+c  find projected a-axis and angle between the rotated a-axis defined by euler angle and the new a-axis. 
+c     anewtmp0= anewtmp0 - (axisc0,anewtmp0) axisc0 
+c     phi = angle betwwen anewtmp0 and a-axis defined by theta, phi 
+c 
+       subroutine new_a_axis(axisc0,theta,phi,
+     =  anewtmp0,
+     o  psi)
        implicit none
-       real(8):: axisc0(3),theta,phi
+       real(8),intent(in):: axisc0(3),theta,phi
        real(8):: anewtmp0(3),psi
 
        real(8) :: v1(3), arot(3),r2,cos_t,angle_t,rot(3,3)
@@ -273,12 +320,14 @@ c       enddo
 #ifdef DEBUG_WRITE
       write(*,*) 'new_a_axis'
 #endif
+c...normalize anewtmp
       r2=0.0d0
       do i=1,3
         r2=r2+anewtmp0(i)**2
       enddo
       anewtmp=anewtmp0/sqrt(r2 )
 
+c...normalize axisc 
       r2=0.0d0
       do i=1,3
         r2=r2+axisc0(i)**2
@@ -290,6 +339,9 @@ c       enddo
 #ifdef DEBUG_WRITE
       write(*,100) 'c-axis=',axisc
 #endif
+c...find rotation matrix by theta and phi
+c...rotate (1,0,0) to find rotated a-axis
+c...rota=rotated a-axis
       call eulerangle2rot(theta,phi,0.0d0,rot)
       v1=(/1.0d0,0.0d0,0.0d0/)
       arot=0.0d0
@@ -304,6 +356,7 @@ c       enddo
       write(*,100) 'anewtmp=',anewtmp
       write(*,100) 'axisc=',axisc 
 #endif
+c... inner product (anewtmp, axisc)
       f= ddot(3,anewtmp,1,axisc,1)
 #ifdef DEBUG_WRITE
       write(*,100) 'f=',f 
@@ -321,6 +374,7 @@ c       enddo
 
       endif
 
+c... anewproj = anewtmp- (anewtmp, axisc) axisc 
       anewproj=anewtmp - f*axisc
 
       r2=0.0d0
@@ -328,6 +382,7 @@ c       enddo
         r2=r2+anewproj(i)**2
       enddo
       anewproj=anewproj/sqrt(r2)
+
 #ifdef DEBUG_WRITE
       write(*,100) 'proj a-axis=',anewproj
 #endif
@@ -337,9 +392,12 @@ c find angle between arot and anewproj
 #ifdef DEBUG_WRITE
       write(*,100)'arot=',arot
 #endif
+
+c... angle between arot(defined by euler angle theta phi)  and anewproj
       cos_t= ddot(3,arot,1,anewproj,1)
       angle_t= acos(cos_t)
 
+c... may be angle is -psi? 
       call cross_x(anewtmp, anewproj,crossc)
 
       direction=ddot(3,crossc,1,axisc,1)
@@ -350,6 +408,7 @@ c find angle between arot and anewproj
              psi=-angle_t ! maybe minus
       endif 
 
+c...store output 
       anewtmp0=anewproj
 
       end subroutine new_a_axis

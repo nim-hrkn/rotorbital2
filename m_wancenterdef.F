@@ -51,7 +51,14 @@
       write(*,'(a,2i5)') 'head,tail=',v%head,v%tail
       end subroutine t_wancenterdef_print
 
-      subroutine do_vector(str,nid,id0,cord,vec,ierr)
+c input str(1:nid), read from str(id0)
+c  str= ( abc 0. 0. 1. )
+c output cord,vec, ierr
+c   cord=abc
+c   vec=0. 0. 1.
+c   ierr : count  errors 
+      subroutine wancenterdef_vector(str,nid,id0,
+     o   cord,vec,ierr)
       implicit none
       integer:: id0
       integer:: nid
@@ -105,9 +112,16 @@
          return  
       endif
 
-      end subroutine do_vector
+      end subroutine wancenterdef_vector
 
-      subroutine do_separate(str0,item,mitem,iitem) 
+c  xxx(yyy -> xxx ( yyy
+c  xxx=yyy -> xxx= yyy
+c output
+c   item(1:iitem)
+      subroutine wancenterdef_separate(str0,
+     o  item,
+     i   mitem,
+     o   iitem) 
       implicit  none
       character(*):: str0
       integer:: mitem
@@ -165,9 +179,12 @@
          if (iend.eq.n) return 
       enddo 
 
-      end subroutine do_separate
+      end subroutine wancenterdef_separate
 
-      subroutine do_key(str,mstr,v,ierr0,stoponerror)
+c input  str(1:mstr)
+c output v, ierr 
+c optinal input stoponerror=.t. -> stop on error
+      subroutine wancenterdef_key(str,mstr,v,ierr0,stoponerror)
       integer:: mstr
        integer:: ierr0
       logical,optional:: stoponerror
@@ -177,7 +194,7 @@
       character(4):: cord
       integer:: i,ierr
 
-      character(24),parameter:: thisprogram='m_wancenterdef::do_key, '
+      character(34),parameter:: thisprogram='m_wancenterdef::wancenterdef_key, '
 
       ierr0=0
 #ifdef DEBUG_WRITE
@@ -213,21 +230,21 @@
              i=i+1;
           case ('axis1=' )
              i=i+1;
-             call do_vector(str,mstr,i,cord, vec,ierr)
+             call wancenterdef_vector(str,mstr,i,cord, vec,ierr)
              ierr0=ierr0+ierr
              v%axis(:,1)=vec
              v%axisinput(1)=1
              i=i+1;
 c          case ('axis2=' )
 c             i=i+1;
-c             call do_vector(str,mstr,i,cord, vec,ierr)
+c             call wancenterdef_vector(str,mstr,i,cord, vec,ierr)
 c             ierr0=ierr0+ierr
 c             v%axis(:,2)=vec
 c             v%axisinput(2)=1
 c             i=i+1;
           case ('axis3=' )
              i=i+1;
-             call do_vector(str,mstr,i,cord, vec,ierr)
+             call wancenterdef_vector(str,mstr,i,cord, vec,ierr)
              ierr0=ierr0+ierr
              v%axis(:,3)=vec
              v%axisinput(3)=1
@@ -269,16 +286,20 @@ c error check
           endif
        endif
 
-      end subroutine do_key
+      end subroutine wancenterdef_key
 
-      subroutine lm_accept(str,ierr)
+c str .eq. on of lmlabel or not
+      subroutine lm_accept(str,
+     o  ierr)
+      use m_lmlabel, only: lmlabel1
       character(*):: str
       integer:: ierr
-      integer,parameter:: m_a=9
-      character(5):: a(m_a)=(/'s','px','pz','pz','dxy','dyz','dz2','dxz','dx2y2'/)
+      integer:: n1_a,n2_a
       integer:: i
-      do i=1,m_a
-         if (str.eq.a(i) ) then
+      n2_a=ubound(lmlabel1,dim=1)
+      n1_a=lbound(lmlabel1,dim=1)
+      do i=n1_a, n2_a
+         if (str.eq.lmlabel1(i) ) then
              ierr=0 
              return
          endif

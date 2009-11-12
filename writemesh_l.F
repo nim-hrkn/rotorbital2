@@ -9,8 +9,8 @@
       real(8),intent(in):: dlmm(-il:il) 
 
       integer,parameter:: nx=10,ny=10,nz=10
-      real(8):: x(3),g,val(-nx:nx,-ny:ny, -nz:nz,(lmx+1)*(lmx+1)) 
-     . ,rr,x0(3), 
+      real(8):: x(3),g,rr,x0(3)
+      real(8):: val(-nx:nx,-ny:ny, -nz:nz,(lmx+1)*(lmx+1)),
      .  rotvalL(-nx:nx,-ny:ny, -nz:nz ),
      .  valL(-nx:nx,-ny:ny, -nz:nz, -lmax:lmax )
 
@@ -22,6 +22,12 @@
 
       integer:: ix,iy,iz,id,im,im2,ilm,nilm,i,il2
       real*8 :: pi,range,g0,eps=1.0d-5
+
+
+      if (il<0 .or. il>3 ) then
+         write(*,*) 'writemesh_l: outofrange, il=',il 
+         stop ' in writemesh_l'
+      endif
 
       pi=2.0d0*asin(1.0d0)
 
@@ -72,15 +78,19 @@ c         enddo
       nllist(0)=1
       nllist(1)=2
       nllist(2)=5
+      nllist(3)=10
 c  1 2 3 4 5
 c  s x y z d 
 
       id=nllist(il) 
 #ifdef DEBUG_WRITE
       write(*,*) 'copy',-il,il,id,id+1*2*il 
+      write(*,*) lbound(vall,dim=4),ubound(vall,dim=4),lbound(val,dim=4),ubound(val,dim=4) 
 #endif
       valL=0.0d0
-      valL(:,:,:,-il:il)= val(:,:,:,id:id+1+2*il) 
+      do i=-il,il
+      valL(-nx:nx,-ny:ny,-nz:nz,i)= val(-nx:nx,-ny:ny,-nz:nz,id+il+i) 
+      enddo
 
 #ifdef DEBUG_WRITE
       write(*,'(a,10f10.5)')'dlmm=', dlmm(-il:il)

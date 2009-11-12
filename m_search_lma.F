@@ -3,6 +3,8 @@
 
       contains
 c-----------------------------
+c input lmstr=s,px,py,... and ibas=1,2,... ,   
+c output : list(1:nfound)
       subroutine search_lmstra(lmstr,ibas,
      i    nlmto,m_indx,n_indx,l_indx, ibas_indx,
      i    nlist,
@@ -25,6 +27,8 @@ c-----------------------------
 
 c-----------------------------
 
+c input l,m,ibas
+c output list(1:nfound)
       subroutine search_lma(l,m,ibas,
      i    nlmto,m_indx,n_indx,l_indx, ibas_indx, 
      i    nlist,
@@ -57,22 +61,13 @@ c-----------------------------
       end subroutine search_lma
 c----------------------------
 
-      subroutine lmstr2lm(lmstr,l,m)
+      subroutine lmstr2lm(lmstr,
+     o l,m)
+      use m_lmlabel, only: lmstrlist=>lmlabel2 ,lmax=>lmlabel_lmax
       implicit none
       character(5):: lmstr
       integer:: l,m
-      integer,parameter:: lmax=2
-      character(5):: lmstrlist(-lmax:lmax,0:lmax)
-
-      lmstrlist(0,0)='s'
-      lmstrlist(-1,1)='py'
-      lmstrlist(0,1)='pz'
-      lmstrlist(1,1)='px'
-      lmstrlist(-2,2)='dxy'
-      lmstrlist(-1,2)='dyz'
-      lmstrlist(0,2)='dz2'
-      lmstrlist(1,2)='dxz'
-      lmstrlist(2,2)='dx2y2'
+c      character(5):: lmstrlist(-lmax:lmax,0:lmax)
 
        do l=0,lmax
          do m=-l,l
@@ -86,24 +81,22 @@ c----------------------------
 
       end subroutine lmstr2lm
 
-      subroutine lm2lmstr(l,m,lmstr)
+      subroutine lm2lmstr(l,m,
+     o  lmstr)
+      use m_lmlabel, only: lmstrlist=>lmlabel2 
       implicit none
       character(5):: lmstr
       integer:: l,m
       integer,parameter:: lmax=2
-      character(5):: lmstrlist(-lmax:lmax,0:lmax)
+c      character(5):: lmstrlist(-lmax:lmax,0:lmax)
 
-      lmstrlist(0,0)='s'
-      lmstrlist(-1,1)='py'
-      lmstrlist(0,1)='pz'
-      lmstrlist(1,1)='px'
-      lmstrlist(-2,2)='dxy'
-      lmstrlist(-1,2)='dyz'
-      lmstrlist(0,2)='dz2'
-      lmstrlist(1,2)='dxz'
-      lmstrlist(2,2)='dx2y2'
+      if ( lbound(lmstrlist,dim=1) <= m .and. 
+     .     m<= ubound(lmstrlist,dim=1) .and.
+     .     0 <=l .and. l <= ubound(lmstrlist,dim=2) ) then
 
       lmstr=lmstrlist(m,l)
+
+      endif 
 
       end subroutine lm2lmstr
 
