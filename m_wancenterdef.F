@@ -11,7 +11,9 @@
       integer:: n,l,m
       integer:: icenter 
       integer:: axisinput(3)
-      real(8):: axis(3,3)
+      character(4):: cord(3)  ! = abc or cartesian
+      real(8):: axis0(3,3) ! = in abc or cartesian 
+      real(8):: axis(3,3)  ! = cartesian
       real(8):: coef
       integer:: head,tail
       end type t_wancenterdef 
@@ -28,6 +30,11 @@
       v%l=1000
       v%m=1000
       v%axisinput=0
+      v%cord=''
+      v%axis0=0.0d0
+      v%axis0(1,1)=1.0d0
+      v%axis0(2,2)=1.0d0
+      v%axis0(3,3)=1.0d0
       v%axis=0.0d0
       v%axis(1,1)=1.0d0
       v%axis(2,2)=1.0d0
@@ -50,6 +57,28 @@
       write(*,'(a,E12.3,2H, ,$)') 'coef=',v%coef
       write(*,'(a,2i5)') 'head,tail=',v%head,v%tail
       end subroutine t_wancenterdef_print
+
+
+      subroutine wancenterdef_abc2cart(cord,
+     = vec)
+       use m_genallcf_v3, only: alat,plat
+      implicit none
+      character(4),intent(in):: cord
+      real(8),intent(inout):: vec(3)
+
+      real(8)::v1(3),v0(3)
+
+      if (cord.eq.'abc')  then
+
+      v0=vec
+      v1=plat(:,1)*v0(1) + plat(:,2)*v0(2) + plat(:,3)*v0(3)
+      v1=v1*alat 
+      vec=v1
+
+      endif
+
+      end subroutine wancenterdef_abc2cart
+
 
 c input str(1:nid), read from str(id0)
 c  str= ( abc 0. 0. 1. )
@@ -106,7 +135,6 @@ c   ierr : count  errors
       if (str(id).eq.')') then
          id0=id 
          ierr=0
-         return
       else 
          ierr=4
          return  
@@ -232,6 +260,9 @@ c optinal input stoponerror=.t. -> stop on error
              i=i+1;
              call wancenterdef_vector(str,mstr,i,cord, vec,ierr)
              ierr0=ierr0+ierr
+             v%cord(1)=cord 
+             v%axis0(:,1)=vec
+             call wancenterdef_abc2cart(cord,vec)
              v%axis(:,1)=vec
              v%axisinput(1)=1
              i=i+1;
@@ -246,6 +277,9 @@ c             i=i+1;
              i=i+1;
              call wancenterdef_vector(str,mstr,i,cord, vec,ierr)
              ierr0=ierr0+ierr
+             v%cord(3)=cord
+             v%axis0(:,3)=vec
+             call wancenterdef_abc2cart(cord,vec)
              v%axis(:,3)=vec
              v%axisinput(3)=1
              i=i+1;

@@ -1,4 +1,3 @@
-#define DEBUG_WRITE
       subroutine writemesh_l(il,dlmm,nl,lmax,lmx, fileid)
       implicit none
       integer,intent(in):: il
@@ -21,8 +20,9 @@
       integer:: nllist(0:3)
 
       integer:: ix,iy,iz,id,im,im2,ilm,nilm,i,il2
-      real*8 :: pi,range,g0,eps=1.0d-5
+      real*8 :: pi,range,g0,eps=1.0d-5,A
 
+      character(10):: outputformat
 
       if (il<0 .or. il>3 ) then
          write(*,*) 'writemesh_l: outofrange, il=',il 
@@ -34,6 +34,8 @@
 
       range=3.0d0
       write(*,*) lmax,lmx, (lmx+1)*(lmx+1) 
+         g0=nx/4
+       A= (128d0 / (pi*g0**6))**0.25d0
       do ix=-nx,nx
       do iy=-ny,ny
       do iz=-nz,nz
@@ -50,8 +52,7 @@
          endif
          call sylm(x,yl,lmx,r2s)
          call sylmnc(c,lmx)
-         g0=nx/4
-         g=exp(-rr/g0**2) 
+         g=A*exp(-rr/g0**2) 
 
          do id=1, (lmx+1)**2
          val(ix,iy,iz,id)=yl(id)*g*c(id)
@@ -112,6 +113,9 @@ c  s x y z d
       id=fileid
       ! rotate 
 
+      outputformat='xsf'
+
+      if (outputformat.eq.'cube' ) then
       ifout=10+id
       write(fname,'(a,i3.3,a)') 'out',fileid,'.cube'
       open(file=fname,unit=ifout) 
@@ -138,6 +142,35 @@ c         write(ifout,120) val(ix,iy,:,id)
       enddo
 
       close(ifout)
+
+      else if (outputformat.eq.'xsf') then
+
+      ifout=10+id
+      write(fname,'(a,i3.3,a)') 'out',fileid,'.xsf'
+      open(file=fname,unit=ifout) 
+    
+      write(ifout,*) 'BEGIN_BLOCK_DATAGRID_3D'
+      write(ifout,'(a,i3.3)') 'out',fileid
+      write(ifout,'(a,i3.3)') 'BEGIN_DATAGRID_3D_',fileid
+      write(ifout,'(3i5)') 2*nx+1, 2*ny+1, 2*nz+1
+      write(ifout,120) -1.0d0*range, -1.0d0*range, -1.0d0*range
+      write(ifout,120) range*1.0d0, 0.0d0, 0.0d0
+      write(ifout,120) 0.0d0,range*1.0d0, 0.0d0
+      write(ifout,120) 0.0d0, 0.0d0, range*1.0d0
+
+      do iz=-nz,nz
+      do iy=-ny,ny
+c         write(ifout,120) val(ix,iy,:,id)
+         write(ifout,120) rotvalL(:,iy,iz)
+      enddo
+      enddo
+
+      write(ifout,*) 'END_DATAGRID_3D'
+      write(ifout,*) 'END_BLOCK_DATAGRID_3D'
+
+      close(ifout)
+
+      endif
       
       end subroutine writemesh_l
 

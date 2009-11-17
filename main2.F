@@ -1,3 +1,6 @@
+#ifdef DEBUG_WRITE
+#undef DEBUG_WRITE
+#endif
       program tst1
       implicit none
 
@@ -35,6 +38,7 @@ c--------------------------------
       implicit none
 
       integer:: i,ic
+      write(*,*) '---write_lmto---'
       write(*,*) 'alat=',alat
       do i=1,3
        write(*,*) plat(:,i)
@@ -42,12 +46,7 @@ c--------------------------------
 
       write(*,*) 'natom=',natom
       do i=1,natom
-         write(*,*) pos(:,i)
-      enddo
-
-      write(*,*) 'nclass=',nclass
-      do ic=1,nclass
-        write(*,'(F10.5)')  z(ic)
+         write(*,*) z(i),pos(:,i)
       enddo
 
       end subroutine write_lmto
@@ -86,6 +85,9 @@ c...........
       real(8):: axisc(3),axisa(3),rot(3,3),eps=1.0d-4
       integer:: im,im2,il,ia1,ia2
 
+c..........
+      logical:: outputwf=.false.
+
 c...... read mnla data
       call read_hbe_d(
      o  nprecb,mrecb,mrece,nlmtot,nqbzt,nband,mrecg )
@@ -104,7 +106,9 @@ c....... read center information
        if (ierr.ne.0) exit
       call wancenterdef_separate(str,item,mitem,iitem) 
       call wancenterdef_key(item,iitem, v,ierr,stoponerror=.false.) 
+#if DEBUG_WRITE
       call t_wancenterdef_print(v) 
+#endif
 
 c..... lmstr->lm
       lmstr= v%lmstr
@@ -116,28 +120,37 @@ c..... lmstr->lm
      i    nlmtot,m_indx,n_indx,l_indx, ibas_indx,
      i    n_nlmalist,
      o    nlmalist,nfound)
+#ifdef DEBUG_WRITE
       write(*,*)'nfound=',nfound
+#endif
 
 c..... axis -> rot -> dlmm
       axisc=v%axis(:,3)
       axisa=v%axis(:,1)
+#if DEBUG_WRITE
       write(*,*) 'axisa=',axisa
       write(*,*) 'axisc=',axisc
+#endif
       call axisac2rot(axisa,axisc,rot)
 
+#if DEBUG_WRITE
       write(*,*)'rot'
       do im=1,3
         write(*,*) rot(:,im)
       enddo
+#endif
 
       call rotdlmm(rot,1,nl,dlmm) 
       il= v%l
       im= v%m 
+#if DEBUG_WRITE
       write(*,150) 'dlmm',il,lmstr,v%axis(:,3),v%axis(:,1)
  150  format('#',a,i5,1x,a,' c=',3f10.3,' a=',3f12.2)
-      write(*,160) (dlmm(im2,im,il,1) ,im2=-il,il) 
- 160  format('#',1x,9F20.10) 
+      write(*,160) 'dlmm=',(dlmm(im2,im,il,1) ,im2=-il,il) 
+ 160  format('#',a,1x,9F20.10) 
+#endif
 
+      write(*,'(a,a)') "#",str(:len_trim(str))
       do im2=-il,il
          call search_lma(il,im2,ibas,
      i    nlmtot,m_indx,n_indx,l_indx, ibas_indx,
@@ -154,7 +167,9 @@ c..... axis -> rot -> dlmm
       enddo
  170  format(2i5,2f10.5,5x,'# m,n,l,a=',8i3,' lm= ',a)
 
+      if (outputwf) then
       call writemesh_l(il, dlmm(-il:il,im,il,1), nl,lmax,lmx, v%id)
+      endif 
 
       enddo
 
